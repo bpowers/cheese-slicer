@@ -423,7 +423,7 @@ function EnergyFrame({ state }: { state: SlicerState }) {
   // Corner centers
   const cx1 = -CR + eS / 2;        // bottom-right corner
   const cx23 = endEnergyX;          // bottom-left and top-left corners share x
-  const cy12 = -210;                // aligned with globe bottom edge
+  const cy12 = -135;                // aligned with globe circle bottom edge
   const cy3 = -CR + eS / 2;        // top-left corner
 
   // U-shape (open top-right): 3 corners, 3 straight segments, arrow
