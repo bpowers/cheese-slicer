@@ -24,12 +24,12 @@ export function renderScene(
   if (globeImage && globeImage.complete) {
     ctx.save();
     ctx.globalAlpha = 0.3;
-    const globeSize = 500;
+    const globeSize = 420;
     ctx.scale(1, -1);
     ctx.drawImage(
       globeImage,
       -globeSize / 2,
-      -globeSize / 2 - 30,
+      -globeSize / 2,
       globeSize,
       globeSize,
     );
