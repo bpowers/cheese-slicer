@@ -4,6 +4,7 @@ export const CORNER_RADIUS = 80;
 export const LEN = 95;
 export const FINENESS = 10;
 
+// FINENESS controls smoothness of polygon-based corner arc approximations
 export const COLORS = {
   economy: 'rgb(0, 0, 0)',
   workGate: 'rgb(0, 0, 0)',
@@ -18,5 +19,3 @@ export const COLORS = {
   labelDark: 'rgb(0, 0, 0)',
   labelLight: 'rgb(255, 255, 255)',
 } as const;
-
-export const LABEL_FONT = 'bold 14px Arial';
