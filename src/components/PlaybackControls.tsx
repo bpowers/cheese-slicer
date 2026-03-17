@@ -8,15 +8,16 @@ interface Props {
   progress: number;
   onStartPause: () => void;
   onSpeedChange: (speed: Speed) => void;
+  onSeek: (year: number) => void;
 }
 
 export function PlaybackControls({
   isPlaying,
   speed,
   currentYear,
-  progress,
   onStartPause,
   onSpeedChange,
+  onSeek,
 }: Props) {
   return (
     <div className="controls">
@@ -36,7 +37,7 @@ export function PlaybackControls({
         min={START_YEAR}
         max={END_YEAR}
         value={currentYear}
-        readOnly
+        onChange={(e) => onSeek(Number(e.target.value))}
       />
       <span className="year-label">{currentYear}</span>
     </div>

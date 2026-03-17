@@ -60,6 +60,7 @@ export interface AnimationState {
   start: () => void;
   pause: () => void;
   setSpeed: (s: Speed) => void;
+  seek: (year: number) => void;
 }
 
 export function useAnimationLoop(): AnimationState {
@@ -133,6 +134,14 @@ export function useAnimationLoop(): AnimationState {
     setSpeed(s);
   }, []);
 
+  const seek = useCallback((year: number) => {
+    const idx = Math.max(0, Math.min(totalYears, year - data.START_YEAR));
+    yearRef.current = idx;
+    subStepRef.current = 0;
+    setYearIndex(idx);
+    setSubStep(0);
+  }, [totalYears]);
+
   const slicerState = computeState(yearIndex, subStep);
   const currentYear = data.START_YEAR + yearIndex;
   const progress = yearIndex / totalYears;
@@ -146,5 +155,6 @@ export function useAnimationLoop(): AnimationState {
     start,
     pause,
     setSpeed: setSpeedCb,
+    seek,
   };
 }

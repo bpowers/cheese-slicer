@@ -5,18 +5,18 @@ export const LEN = 95;
 export const FINENESS = 10;
 
 export const COLORS = {
-  economy: 'rgba(0, 0, 0, 0.7)',
-  workGate: 'rgba(0, 0, 0, 0.7)',
-  gdp: 'rgba(0, 255, 0, 0.7)',
-  consumption: 'rgba(255, 255, 0, 0.7)',
-  discretionary: 'rgba(255, 0, 0, 0.7)',
-  staples: 'rgba(218, 165, 32, 0.7)',
-  investment: 'rgba(255, 0, 255, 0.7)',
-  maintenance: 'rgba(100, 149, 237, 0.7)',
-  energyAcquisition: 'rgba(0, 0, 255, 0.5)',
-  energy: 'rgba(0, 0, 0, 0.7)',
-  labelDark: 'rgba(0, 0, 0, 1)',
-  labelLight: 'rgba(255, 255, 255, 1)',
+  economy: 'rgb(0, 0, 0)',
+  workGate: 'rgb(0, 0, 0)',
+  gdp: 'rgb(0, 200, 0)',
+  consumption: 'rgb(220, 220, 0)',
+  discretionary: 'rgb(220, 0, 0)',
+  staples: 'rgb(218, 165, 32)',
+  investment: 'rgb(200, 0, 200)',
+  maintenance: 'rgb(100, 149, 237)',
+  energyAcquisition: 'rgb(0, 0, 200)',
+  energy: 'rgb(0, 0, 0)',
+  labelDark: 'rgb(0, 0, 0)',
+  labelLight: 'rgb(255, 255, 255)',
 } as const;
 
 export const LABEL_FONT = 'bold 8px Arial';

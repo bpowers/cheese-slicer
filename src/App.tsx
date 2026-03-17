@@ -54,6 +54,7 @@ export function App() {
         progress={animation.progress}
         onStartPause={handleStartPause}
         onSpeedChange={animation.setSpeed}
+        onSeek={animation.seek}
       />
     </div>
   );

@@ -18,10 +18,17 @@ export function drawWorkGate(ctx: CanvasRenderingContext2D): void {
 
   ctx.fillStyle = COLORS.workGate;
   ctx.beginPath();
+  // right arrow point
   ctx.moveTo(tipX, 0);
   ctx.lineTo(tipX - s / 4, s / 4);
+  // top edge
+  ctx.lineTo(tipX - (3 * s) / 4, s / 4);
+  // left indent (matching right arrow shape)
   ctx.lineTo(tipX - s, s / 4);
+  ctx.lineTo(tipX - (3 * s) / 4, 0);
   ctx.lineTo(tipX - s, -s / 4);
+  // bottom edge
+  ctx.lineTo(tipX - (3 * s) / 4, -s / 4);
   ctx.lineTo(tipX - s / 4, -s / 4);
   ctx.closePath();
   ctx.fill();
@@ -177,11 +184,12 @@ function drawMaintenance(
 
   ctx.fillStyle = COLORS.maintenance;
 
-  // horizontal bar
+  // horizontal bar (left edge aligns with corner center to avoid overlap)
+  const mCornerX = mEndX + CORNER_RADIUS - state.maintenanceSize / 2;
   ctx.fillRect(
-    mEndX + CORNER_RADIUS - state.maintenanceSize,
+    mCornerX,
     startY - state.eroiSize - state.maintenanceSize,
-    endX + CORNER_RADIUS - (mEndX + CORNER_RADIUS - state.maintenanceSize),
+    endX + CORNER_RADIUS - mCornerX,
     state.maintenanceSize,
   );
 
