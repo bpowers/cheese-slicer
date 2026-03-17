@@ -19,4 +19,4 @@ export const COLORS = {
   labelLight: 'rgb(255, 255, 255)',
 } as const;
 
-export const LABEL_FONT = 'bold 8px Arial';
+export const LABEL_FONT = 'bold 14px Arial';

@@ -101,7 +101,7 @@ export function drawTotalConsumption(ctx: CanvasRenderingContext2D, state: Slice
 
   const dLabel = 'Discretionary';
   const dtw = textExtent(ctx, dLabel);
-  drawText(ctx, trX + 2 * LEN - dtw / 2, trY - state.discretionaryCSize / 2 - 5, dLabel, COLORS.labelDark);
+  drawText(ctx, trX + 2 * LEN - dtw / 2, trY - state.discretionaryCSize / 2 - 5, dLabel, COLORS.labelLight);
 }
 
 export function drawTotalInvestment(ctx: CanvasRenderingContext2D, state: SlicerState): void {
@@ -139,7 +139,7 @@ export function drawTotalInvestment(ctx: CanvasRenderingContext2D, state: Slicer
   // "Investment" label
   const label = 'Investment';
   const tw = textExtent(ctx, label);
-  drawText(ctx, trX - tw, ECON_SIZE / 2 - investmentSize / 2 - 5, label, COLORS.labelDark);
+  drawText(ctx, trX - tw, ECON_SIZE / 2 - investmentSize / 2 - 5, label, COLORS.labelLight);
 }
 
 function drawDiscretionaryInvestment(
@@ -219,7 +219,7 @@ function drawMaintenance(
     endX + CORNER_RADIUS - tw - 5,
     startY - state.eroiSize - state.maintenanceSize / 2 - 5,
     label,
-    COLORS.labelDark,
+    COLORS.labelLight,
   );
 }
 
@@ -273,7 +273,7 @@ function drawEnergyAcquisition(
     eroiEndX + CORNER_RADIUS - state.eroiSize / 2 - 12,
     startY - state.eroiSize / 2 - 5,
     'Energy Acquisition',
-    COLORS.labelDark,
+    COLORS.labelLight,
   );
 }
 
@@ -298,11 +298,19 @@ export function drawEnergy(ctx: CanvasRenderingContext2D, state: SlicerState): v
   // top-left corner
   drawCorner(ctx, endEnergyX, -CORNER_RADIUS + energySize / 2, 0, energySize);
 
-  // arrow pointing right into work gate
+  // arrow pointing right into work gate -- tip stays fixed, arrowhead scales uniformly
+  const arrowTipX = -ECON_SIZE / 2 - (3 * WORK_GATE_SIZE) / 4 - 5;
+  const arrowBaseX = arrowTipX - energySize;
+
+  // horizontal bar between corner exit and arrowhead base
+  if (arrowBaseX > endEnergyX) {
+    ctx.fillRect(endEnergyX, -energySize / 2, arrowBaseX - endEnergyX, energySize);
+  }
+
   ctx.beginPath();
-  ctx.moveTo(endEnergyX + energySize, 0);
-  ctx.lineTo(endEnergyX, energySize);
-  ctx.lineTo(endEnergyX, -energySize);
+  ctx.moveTo(arrowTipX, 0);
+  ctx.lineTo(arrowBaseX, energySize);
+  ctx.lineTo(arrowBaseX, -energySize);
   ctx.closePath();
   ctx.fill();
 
