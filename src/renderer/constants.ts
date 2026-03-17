@@ -2,9 +2,7 @@ export const ECON_SIZE = 150;
 export const WORK_GATE_SIZE = 100;
 export const CORNER_RADIUS = 80;
 export const LEN = 95;
-export const FINENESS = 10;
 
-// FINENESS controls smoothness of polygon-based corner arc approximations
 export const COLORS = {
   economy: 'rgb(0, 0, 0)',
   workGate: 'rgb(0, 0, 0)',

@@ -1,42 +1,13 @@
 import { SlicerState } from '../types';
-import { ECON_SIZE, WORK_GATE_SIZE, CORNER_RADIUS, LEN, FINENESS, COLORS } from '../renderer/constants';
+import { ECON_SIZE, WORK_GATE_SIZE, CORNER_RADIUS, LEN, COLORS } from '../renderer/constants';
+
+const CR = CORNER_RADIUS;
 
 const LABEL_STYLE: React.CSSProperties = {
   fontWeight: 'bold',
   fontSize: 14,
   fontFamily: 'Arial',
 };
-
-function cornerPath(
-  cx: number,
-  cy: number,
-  startAngleDeg: number,
-  lineWidth: number,
-): string {
-  const innerR = CORNER_RADIUS - lineWidth;
-  const outerR = CORNER_RADIUS;
-  const stepAngle = ((90 / FINENESS) * Math.PI) / 180;
-  const startAngle = (startAngleDeg * Math.PI) / 180;
-
-  const parts: string[] = [];
-
-  for (let i = 0; i <= FINENESS; i++) {
-    const angle = startAngle - stepAngle * i;
-    const x = cx + Math.sin(angle) * innerR;
-    const y = cy + Math.cos(angle) * innerR;
-    parts.push(i === 0 ? `M${x},${y}` : `L${x},${y}`);
-  }
-
-  for (let i = FINENESS; i >= 0; i--) {
-    const angle = startAngle - stepAngle * i;
-    const x = cx + Math.sin(angle) * outerR;
-    const y = cy + Math.cos(angle) * outerR;
-    parts.push(`L${x},${y}`);
-  }
-
-  parts.push('Z');
-  return parts.join(' ');
-}
 
 function Label({
   x,
@@ -146,13 +117,45 @@ function ConsumptionFlow({ state }: { state: SlicerState }) {
   const trY =
     ECON_SIZE / 2 - state.eroiSize - state.maintenanceSize - state.discretionaryISize;
   const consumptionSize = state.discretionaryCSize + state.staplesSize;
+  const dCS = state.discretionaryCSize;
+  const sS = state.staplesSize;
 
-  const sArrX = trX + LEN + CORNER_RADIUS - state.staplesSize / 2;
-  const sArrY = trY - state.discretionaryCSize - CORNER_RADIUS;
+  // Staples: corner + arrow combined into single path
+  const sCx = trX + LEN;
+  const sCy = trY - dCS - CR;
+  const sInnerR = CR - sS;
+  const sArrX = sCx + CR - sS / 2;
+
+  // Outline: outer arc from 0deg to 90deg, arrow, inner arc back
+  const staplesPath = [
+    `M${sCx},${sCy + CR}`,
+    `A${CR} ${CR} 0 0 0 ${sCx + CR},${sCy}`,
+    `L${sArrX + sS},${sCy}`,
+    `L${sArrX},${sCy - sS}`,
+    `L${sArrX - sS},${sCy}`,
+    `L${sCx + sInnerR},${sCy}`,
+    `A${sInnerR} ${sInnerR} 0 0 1 ${sCx},${sCy + sInnerR}`,
+    'Z',
+  ].join(' ');
+
+  // Discretionary consumption: rect + arrow combined into single path
+  const dLeft = trX + LEN;
+  const dRight = trX + 3 * LEN;
+
+  const discretionaryPath = [
+    `M${dLeft},${trY}`,
+    `L${dRight},${trY}`,
+    `L${dRight},${trY + dCS / 2}`,
+    `L${dRight + dCS},${trY - dCS / 2}`,
+    `L${dRight},${trY - (3 * dCS) / 2}`,
+    `L${dRight},${trY - dCS}`,
+    `L${dLeft},${trY - dCS}`,
+    'Z',
+  ].join(' ');
 
   return (
     <>
-      {/* Consumption bar */}
+      {/* Consumption bar (single rect, no seam issue) */}
       <rect
         x={trX}
         y={trY - consumptionSize}
@@ -169,39 +172,20 @@ function ConsumptionFlow({ state }: { state: SlicerState }) {
         Consumption
       </Label>
 
-      {/* Staples corner + arrow */}
-      <path
-        d={cornerPath(trX + LEN, trY - state.discretionaryCSize - CORNER_RADIUS, 90, state.staplesSize)}
-        fill={COLORS.staples}
-      />
-      <polygon
-        points={`${sArrX},${sArrY - state.staplesSize} ${sArrX + state.staplesSize},${sArrY} ${sArrX - state.staplesSize},${sArrY}`}
-        fill={COLORS.staples}
-      />
+      <path d={staplesPath} fill={COLORS.staples} />
       <Label
         x={sArrX}
-        y={trY - state.discretionaryCSize - state.staplesSize - CORNER_RADIUS - 10}
+        y={trY - dCS - sS - CR - 10}
         fill={COLORS.labelDark}
         anchor="middle"
       >
         Staples
       </Label>
 
-      {/* Discretionary consumption bar + arrow */}
-      <rect
-        x={trX + LEN}
-        y={trY - state.discretionaryCSize}
-        width={2 * LEN}
-        height={state.discretionaryCSize}
-        fill={COLORS.discretionary}
-      />
-      <polygon
-        points={`${trX + 3 * LEN + state.discretionaryCSize},${trY - state.discretionaryCSize / 2} ${trX + 3 * LEN},${trY + state.discretionaryCSize / 2} ${trX + 3 * LEN},${trY - (3 * state.discretionaryCSize) / 2}`}
-        fill={COLORS.discretionary}
-      />
+      <path d={discretionaryPath} fill={COLORS.discretionary} />
       <Label
         x={trX + 2 * LEN}
-        y={trY - state.discretionaryCSize / 2 - 5}
+        y={trY - dCS / 2 - 5}
         fill={COLORS.labelLight}
         anchor="middle"
       >
@@ -220,26 +204,33 @@ function DiscretionaryInvestment({
   endX: number;
   num: number;
 }) {
+  const dIS = state.discretionaryISize;
+  const cx = endX + CR;
+  const innerR = CR - dIS;
+  const rectBottom = ECON_SIZE / 2 + dIS;
+
+  // Corner (startAngle=0) connects horizontal bar above to vertical rect below.
+  // Outer at 0deg: (cx, num+CR), outer at 270deg: (endX, num)
+  // Inner at 270deg: (endX+dIS, num), inner at 0deg: (cx, num+innerR)
+  const d = [
+    `M${cx},${num + CR}`,
+    `A${CR} ${CR} 0 0 1 ${endX},${num}`,
+    `L${endX},${rectBottom}`,
+    `L${endX - dIS / 2},${rectBottom}`,
+    `L${endX + dIS / 2},${ECON_SIZE / 2}`,
+    `L${endX + (3 * dIS) / 2},${rectBottom}`,
+    `L${endX + dIS},${rectBottom}`,
+    `L${endX + dIS},${num}`,
+    `A${innerR} ${innerR} 0 0 0 ${cx},${num + innerR}`,
+    'Z',
+  ].join(' ');
+
   return (
     <>
-      <path
-        d={cornerPath(endX + CORNER_RADIUS, num, 0, state.discretionaryISize)}
-        fill={COLORS.discretionary}
-      />
-      <rect
-        x={endX}
-        y={ECON_SIZE / 2 + state.discretionaryISize}
-        width={state.discretionaryISize}
-        height={num - (ECON_SIZE / 2 + state.discretionaryISize)}
-        fill={COLORS.discretionary}
-      />
-      <polygon
-        points={`${endX + state.discretionaryISize / 2},${ECON_SIZE / 2} ${endX + (3 * state.discretionaryISize) / 2},${ECON_SIZE / 2 + state.discretionaryISize} ${endX - state.discretionaryISize / 2},${ECON_SIZE / 2 + state.discretionaryISize}`}
-        fill={COLORS.discretionary}
-      />
+      <path d={d} fill={COLORS.discretionary} />
       <Label
-        x={endX + (3 * state.discretionaryISize) / 2 - 4}
-        y={ECON_SIZE / 2 + state.discretionaryISize + 4}
+        x={endX + (3 * dIS) / 2 - 4}
+        y={ECON_SIZE / 2 + dIS + 4}
         fill={COLORS.labelDark}
       >
         Discretionary
@@ -259,41 +250,42 @@ function MaintenanceFlow({
   endX: number;
   num: number;
 }) {
+  const mS = state.maintenanceSize;
   const mEndX = -ECON_SIZE / 2 + ECON_SIZE / 3;
-  const mCornerX = mEndX + CORNER_RADIUS - state.maintenanceSize / 2;
+  const cx = mEndX + CR - mS / 2;
+  const cy = num + mS;
+  const innerR = CR - mS;
+
+  const hRight = endX + CR;
+  const hTop = startY - state.eroiSize;
+  const hBottom = hTop - mS;
+
+  const vLeft = mEndX - mS / 2;
+  const vRight = mEndX + mS / 2;
+  const vBottom = ECON_SIZE / 2 + mS;
+
+  // Outline: horizontal bar right → corner outer → vertical bar down → arrow → back up
+  const d = [
+    `M${hRight},${hTop}`,
+    `L${cx},${hTop}`,
+    `A${CR} ${CR} 0 0 1 ${vLeft},${cy}`,
+    `L${vLeft},${vBottom}`,
+    `L${mEndX - mS},${vBottom}`,
+    `L${mEndX},${ECON_SIZE / 2}`,
+    `L${mEndX + mS},${vBottom}`,
+    `L${vRight},${vBottom}`,
+    `L${vRight},${cy}`,
+    `A${innerR} ${innerR} 0 0 0 ${cx},${hBottom}`,
+    `L${hRight},${hBottom}`,
+    'Z',
+  ].join(' ');
 
   return (
     <>
-      <rect
-        x={mCornerX}
-        y={startY - state.eroiSize - state.maintenanceSize}
-        width={endX + CORNER_RADIUS - mCornerX}
-        height={state.maintenanceSize}
-        fill={COLORS.maintenance}
-      />
-      <path
-        d={cornerPath(
-          mEndX + CORNER_RADIUS - state.maintenanceSize / 2,
-          num + state.maintenanceSize,
-          0,
-          state.maintenanceSize,
-        )}
-        fill={COLORS.maintenance}
-      />
-      <rect
-        x={mEndX - state.maintenanceSize / 2}
-        y={ECON_SIZE / 2 + state.maintenanceSize}
-        width={state.maintenanceSize}
-        height={num + state.maintenanceSize - (ECON_SIZE / 2 + state.maintenanceSize)}
-        fill={COLORS.maintenance}
-      />
-      <polygon
-        points={`${mEndX},${ECON_SIZE / 2} ${mEndX + state.maintenanceSize},${ECON_SIZE / 2 + state.maintenanceSize} ${mEndX - state.maintenanceSize},${ECON_SIZE / 2 + state.maintenanceSize}`}
-        fill={COLORS.maintenance}
-      />
+      <path d={d} fill={COLORS.maintenance} />
       <Label
-        x={endX + CORNER_RADIUS - 5}
-        y={startY - state.eroiSize - state.maintenanceSize / 2 - 5}
+        x={hRight - 5}
+        y={startY - state.eroiSize - mS / 2 - 5}
         fill={COLORS.labelLight}
         anchor="end"
       >
@@ -314,41 +306,41 @@ function EnergyAcquisition({
   endX: number;
   num: number;
 }) {
+  const eS = state.eroiSize;
   const eroiEndX = -ECON_SIZE / 2 - WORK_GATE_SIZE / 2;
   const eroiEndY = WORK_GATE_SIZE / 4;
+  const cx = eroiEndX + CR - eS / 2;
+  const cy = num + state.maintenanceSize + eS;
+  const innerR = CR - eS;
+
+  const hRight = endX + CR;
+  const hBottom = startY - eS;
+
+  const vLeft = eroiEndX - eS / 2;
+  const vRight = eroiEndX + eS / 2;
+  const vBottom = eroiEndY + eS;
+
+  const d = [
+    `M${hRight},${startY}`,
+    `L${cx},${startY}`,
+    `A${CR} ${CR} 0 0 1 ${vLeft},${cy}`,
+    `L${vLeft},${vBottom}`,
+    `L${eroiEndX - eS},${vBottom}`,
+    `L${eroiEndX},${eroiEndY}`,
+    `L${eroiEndX + eS},${vBottom}`,
+    `L${vRight},${vBottom}`,
+    `L${vRight},${cy}`,
+    `A${innerR} ${innerR} 0 0 0 ${cx},${hBottom}`,
+    `L${hRight},${hBottom}`,
+    'Z',
+  ].join(' ');
 
   return (
     <>
-      <rect
-        x={eroiEndX + CORNER_RADIUS - state.eroiSize / 2}
-        y={startY - state.eroiSize}
-        width={endX + CORNER_RADIUS - (eroiEndX + CORNER_RADIUS - state.eroiSize / 2)}
-        height={state.eroiSize}
-        fill={COLORS.energyAcquisition}
-      />
-      <path
-        d={cornerPath(
-          eroiEndX + CORNER_RADIUS - state.eroiSize / 2,
-          num + state.maintenanceSize + state.eroiSize,
-          0,
-          state.eroiSize,
-        )}
-        fill={COLORS.energyAcquisition}
-      />
-      <rect
-        x={eroiEndX - state.eroiSize / 2}
-        y={eroiEndY + state.eroiSize}
-        width={state.eroiSize}
-        height={num + state.maintenanceSize + state.eroiSize - (eroiEndY + state.eroiSize)}
-        fill={COLORS.energyAcquisition}
-      />
-      <polygon
-        points={`${eroiEndX},${eroiEndY} ${eroiEndX + state.eroiSize},${eroiEndY + state.eroiSize} ${eroiEndX - state.eroiSize},${eroiEndY + state.eroiSize}`}
-        fill={COLORS.energyAcquisition}
-      />
+      <path d={d} fill={COLORS.energyAcquisition} />
       <Label
-        x={eroiEndX + CORNER_RADIUS - state.eroiSize / 2 - 12}
-        y={startY - state.eroiSize / 2 - 5}
+        x={cx - 12}
+        y={startY - eS / 2 - 5}
         fill={COLORS.labelLight}
       >
         Energy Acquisition
@@ -358,50 +350,46 @@ function EnergyAcquisition({
 }
 
 function InvestmentFlow({ state }: { state: SlicerState }) {
-  const CR = CORNER_RADIUS;
   const trX = ECON_SIZE / 2 + 2 * LEN;
   const trY =
     ECON_SIZE / 2 - state.eroiSize - state.maintenanceSize - state.discretionaryISize + CR / 2;
   const investmentSize = state.discretionaryISize + state.eroiSize + state.maintenanceSize;
+  const innerR = CR - investmentSize;
 
   const startY = ECON_SIZE / 2 + LEN + 2 * CR - investmentSize;
   const endX = -ECON_SIZE / 2 + (3 * ECON_SIZE) / 5;
   const num = trY + CR / 2 + LEN - state.eroiSize - state.maintenanceSize;
 
+  const hBarLeft = trX - (3 * LEN) / 2;
+  const hBarBottom = ECON_SIZE / 2 - investmentSize;
+  const hBarTop = ECON_SIZE / 2;
+  const corner1cy = trY + CR / 2;
+  const corner2cy = corner1cy + LEN;
+  const vBarRight = trX + CR;
+  const vBarLeft = vBarRight - investmentSize;
+  const topBarLeft = endX + CR;
+  const topBarBottom = startY - investmentSize;
+
+  // U-shaped path: horizontal bar → corner1 → vertical bar → corner2 → top bar
+  const d = [
+    `M${hBarLeft},${hBarBottom}`,
+    `L${trX},${hBarBottom}`,
+    `A${CR} ${CR} 0 0 1 ${vBarRight},${corner1cy}`,
+    `L${vBarRight},${corner2cy}`,
+    `A${CR} ${CR} 0 0 1 ${trX},${startY}`,
+    `L${topBarLeft},${startY}`,
+    `L${topBarLeft},${topBarBottom}`,
+    `L${trX},${topBarBottom}`,
+    `A${innerR} ${innerR} 0 0 0 ${vBarLeft},${corner2cy}`,
+    `L${vBarLeft},${corner1cy}`,
+    `A${innerR} ${innerR} 0 0 0 ${trX},${hBarTop}`,
+    `L${hBarLeft},${hBarTop}`,
+    'Z',
+  ].join(' ');
+
   return (
     <>
-      {/* Main investment bar (vertical, from GDP) */}
-      <rect
-        x={trX - (3 * LEN) / 2}
-        y={ECON_SIZE / 2 - investmentSize}
-        width={(3 * LEN) / 2}
-        height={investmentSize}
-        fill={COLORS.investment}
-      />
-
-      {/* Corner going up-right */}
-      <path d={cornerPath(trX, trY + CR / 2, 180, investmentSize)} fill={COLORS.investment} />
-
-      {/* Vertical bar going up along right side */}
-      <rect
-        x={trX + CR - investmentSize}
-        y={trY + CR / 2}
-        width={investmentSize}
-        height={LEN}
-        fill={COLORS.investment}
-      />
-
-      {/* Corner at top turning left */}
-      <path d={cornerPath(trX, trY + CR / 2 + LEN, 90, investmentSize)} fill={COLORS.investment} />
-
-      {/* Horizontal bar going left across the top */}
-      <rect
-        x={endX + CR}
-        y={startY - investmentSize}
-        width={trX - (endX + CR)}
-        height={investmentSize}
-        fill={COLORS.investment}
-      />
+      <path d={d} fill={COLORS.investment} />
 
       <Label
         x={trX}
@@ -412,7 +400,6 @@ function InvestmentFlow({ state }: { state: SlicerState }) {
         Investment
       </Label>
 
-      {/* Sub-flows */}
       <DiscretionaryInvestment state={state} endX={endX} num={num} />
       <MaintenanceFlow state={state} startY={startY} endX={endX} num={num} />
       <EnergyAcquisition state={state} startY={startY} endX={endX} num={num} />
@@ -422,65 +409,48 @@ function InvestmentFlow({ state }: { state: SlicerState }) {
 
 function EnergyFrame({ state }: { state: SlicerState }) {
   const endEnergyX = -200;
-  const energySize = state.energySize;
+  const eS = state.energySize;
+  const innerR = CR - eS;
   const arrowTipX = -ECON_SIZE / 2 - (3 * WORK_GATE_SIZE) / 4 - 5;
-  const arrowBaseX = arrowTipX - energySize;
+  const arrowBaseX = arrowTipX - eS;
+
+  // Corner centers
+  const cx1 = -CR + eS / 2;        // bottom-right corner
+  const cx23 = endEnergyX;          // bottom-left and top-left corners share x
+  const cy12 = -200;                // bottom-right and bottom-left corners share y
+  const cy3 = -CR + eS / 2;        // top-left corner
+
+  // U-shape (open top-right): 3 corners, 3 straight segments, arrow
+  const d = [
+    // Outer edge, clockwise from open end
+    `M${cx1 + CR},${cy12}`,
+    `A${CR} ${CR} 0 0 0 ${cx1},${cy12 - CR}`,
+    `L${cx23},${cy12 - CR}`,
+    `A${CR} ${CR} 0 0 0 ${cx23 - CR},${cy12}`,
+    `L${cx23 - CR},${cy3}`,
+    `A${CR} ${CR} 0 0 0 ${cx23},${cy3 + CR}`,
+    // Top bar to arrow
+    `L${arrowBaseX},${eS / 2}`,
+    `L${arrowBaseX},${eS}`,
+    `L${arrowTipX},0`,
+    `L${arrowBaseX},${-eS}`,
+    `L${arrowBaseX},${-eS / 2}`,
+    // Inner edge, back toward open end
+    `L${cx23},${cy3 + innerR}`,
+    `A${innerR} ${innerR} 0 0 1 ${cx23 - innerR},${cy3}`,
+    `L${cx23 - innerR},${cy12}`,
+    `A${innerR} ${innerR} 0 0 1 ${cx23},${cy12 - innerR}`,
+    `L${cx1},${cy12 - innerR}`,
+    `A${innerR} ${innerR} 0 0 1 ${cx1 + innerR},${cy12}`,
+    'Z',
+  ].join(' ');
 
   return (
     <>
-      {/* Bottom-right corner */}
-      <path
-        d={cornerPath(-CORNER_RADIUS + energySize / 2, -200, 180, energySize)}
-        fill={COLORS.energy}
-      />
-
-      {/* Horizontal bar along bottom */}
-      <rect
-        x={endEnergyX}
-        y={-200 - CORNER_RADIUS}
-        width={-CORNER_RADIUS + energySize / 2 - endEnergyX}
-        height={energySize}
-        fill={COLORS.energy}
-      />
-
-      {/* Bottom-left corner */}
-      <path d={cornerPath(endEnergyX, -200, 270, energySize)} fill={COLORS.energy} />
-
-      {/* Vertical bar going up (canvas used negative height; SVG needs positive) */}
-      <rect
-        x={endEnergyX - CORNER_RADIUS}
-        y={-200}
-        width={energySize}
-        height={200 - CORNER_RADIUS + energySize / 2}
-        fill={COLORS.energy}
-      />
-
-      {/* Top-left corner */}
-      <path
-        d={cornerPath(endEnergyX, -CORNER_RADIUS + energySize / 2, 0, energySize)}
-        fill={COLORS.energy}
-      />
-
-      {/* Horizontal bar between corner exit and arrowhead base */}
-      {arrowBaseX > endEnergyX && (
-        <rect
-          x={endEnergyX}
-          y={-energySize / 2}
-          width={arrowBaseX - endEnergyX}
-          height={energySize}
-          fill={COLORS.energy}
-        />
-      )}
-
-      {/* Arrow pointing right into work gate */}
-      <polygon
-        points={`${arrowTipX},0 ${arrowBaseX},${energySize} ${arrowBaseX},${-energySize}`}
-        fill={COLORS.energy}
-      />
-
+      <path d={d} fill={COLORS.energy} />
       <Label
-        x={endEnergyX + energySize}
-        y={-200 - CORNER_RADIUS + energySize / 2 - 5}
+        x={endEnergyX + eS}
+        y={-200 - CR + eS / 2 - 5}
         fill={COLORS.labelLight}
       >
         Energy
