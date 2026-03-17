@@ -30,6 +30,10 @@ function Label({
       fill={fill}
       textAnchor={anchor}
       style={LABEL_STYLE}
+      stroke="rgba(0,0,0,0.3)"
+      strokeWidth={3}
+      strokeLinejoin="round"
+      paintOrder="stroke fill"
     >
       {children}
     </text>
@@ -357,7 +361,7 @@ function InvestmentFlow({ state }: { state: SlicerState }) {
   const innerR = CR - investmentSize;
 
   const startY = ECON_SIZE / 2 + LEN + 2 * CR - investmentSize;
-  const endX = -ECON_SIZE / 2 + (3 * ECON_SIZE) / 5;
+  const endX = (2 * ECON_SIZE) / 5;
   const num = trY + CR / 2 + LEN - state.eroiSize - state.maintenanceSize;
 
   const hBarLeft = trX - (3 * LEN) / 2;
@@ -417,7 +421,7 @@ function EnergyFrame({ state }: { state: SlicerState }) {
   // Corner centers
   const cx1 = -CR + eS / 2;        // bottom-right corner
   const cx23 = endEnergyX;          // bottom-left and top-left corners share x
-  const cy12 = -200;                // bottom-right and bottom-left corners share y
+  const cy12 = -210;                // aligned with globe bottom edge
   const cy3 = -CR + eS / 2;        // top-left corner
 
   // U-shape (open top-right): 3 corners, 3 straight segments, arrow
@@ -450,7 +454,7 @@ function EnergyFrame({ state }: { state: SlicerState }) {
       <path d={d} fill={COLORS.energy} />
       <Label
         x={endEnergyX + eS}
-        y={-200 - CR + eS / 2 - 5}
+        y={cy12 - CR + eS / 2 - 5}
         fill={COLORS.labelLight}
       >
         Energy
