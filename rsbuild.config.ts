@@ -7,6 +7,6 @@ export default defineConfig({
     template: './src/index.html',
   },
   output: {
-    assetPrefix: '/cheese-slicer/',
+    assetPrefix: '/',
   },
 });
