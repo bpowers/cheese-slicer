@@ -468,7 +468,7 @@ function EnergyFrame({ state }: { state: SlicerState }) {
 export function CheeseDiagram({ state }: { state: SlicerState }) {
   return (
     <svg
-      viewBox="-350 -350 700 700"
+      viewBox="-300 -350 700 700"
       preserveAspectRatio="xMidYMid meet"
       overflow="visible"
       style={{ width: '100%', height: '100%' }}
