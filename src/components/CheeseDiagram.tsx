@@ -146,7 +146,7 @@ function ConsumptionFlow({ state }: { state: SlicerState }) {
 
   // Discretionary consumption: rect + arrow combined into single path
   const dLeft = trX + LEN;
-  const dRight = trX + 3 * LEN;
+  const dRight = trX + 2.25 * LEN;
 
   const discretionaryPath = [
     `M${dLeft},${trY}`,
@@ -190,7 +190,7 @@ function ConsumptionFlow({ state }: { state: SlicerState }) {
 
       <path d={discretionaryPath} fill={COLORS.discretionary} />
       <Label
-        x={trX + 2 * LEN}
+        x={trX + 1.75 * LEN}
         y={trY - dCS / 2 - 5}
         fill={COLORS.labelLight}
         anchor="middle"
@@ -423,7 +423,7 @@ function EnergyFrame({ state }: { state: SlicerState }) {
   // Corner centers
   const cx1 = -CR + eS / 2;        // bottom-right corner
   const cx23 = endEnergyX;          // bottom-left and top-left corners share x
-  const cy12 = -135;                // aligned with globe circle bottom edge
+  const cy12 = -170;                // aligned with globe circle bottom edge
   const cy3 = -CR + eS / 2;        // top-left corner
 
   // U-shape (open top-right): 3 corners, 3 straight segments, arrow
