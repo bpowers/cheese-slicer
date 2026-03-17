@@ -30,10 +30,12 @@ function Label({
       fill={fill}
       textAnchor={anchor}
       style={LABEL_STYLE}
-      stroke="rgba(0,0,0,0.3)"
-      strokeWidth={3}
-      strokeLinejoin="round"
-      paintOrder="stroke fill"
+      {...(fill === COLORS.labelLight && {
+        stroke: 'rgba(0,0,0,0.3)',
+        strokeWidth: 3,
+        strokeLinejoin: 'round' as const,
+        paintOrder: 'stroke fill',
+      })}
     >
       {children}
     </text>
