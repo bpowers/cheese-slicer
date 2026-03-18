@@ -96,9 +96,9 @@ export function useAnimationLoop(): AnimationState {
       if (nextYear > totalYears) {
         playingRef.current = false;
         setIsPlaying(false);
-        yearRef.current = 0;
+        yearRef.current = totalYears;
         subStepRef.current = 0;
-        setYearIndex(0);
+        setYearIndex(totalYears);
         setSubStep(0);
         return;
       }
@@ -114,11 +114,17 @@ export function useAnimationLoop(): AnimationState {
 
   const start = useCallback(() => {
     if (playingRef.current) return;
+    if (yearRef.current >= totalYears) {
+      yearRef.current = 0;
+      subStepRef.current = 0;
+      setYearIndex(0);
+      setSubStep(0);
+    }
     playingRef.current = true;
     setIsPlaying(true);
     lastTickRef.current = performance.now();
     rafRef.current = requestAnimationFrame(tick);
-  }, [tick]);
+  }, [tick, totalYears]);
 
   const pause = useCallback(() => {
     playingRef.current = false;
